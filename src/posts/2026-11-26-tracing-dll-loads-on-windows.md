@@ -8,7 +8,7 @@ This walkthrough follows a DLL load from the executable’s import table to the 
 - [Process Explorer](https://learn.microsoft.com/en-us/sysinternals/downloads/process-explorer) to list loaded modules and read the process environment.
 - [PE-bear](https://github.com/hasherezade/pe-bear) to inspect the executable’s imports and the DLLs’ exports.
 - [Process Monitor](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon), or Procmon, to see file operations and image loads as they happen.
-- [OMNISPEX](https://github.com/0xCarbanak/omnispex) to cross-check the import and load lists after the manual walkthrough.
+- [OMNISPEX](https://github.com/0xCarbanak/omnispex) for automating the search for DLL hijack opportunities.
 
 ## 2. DLL basics
 
