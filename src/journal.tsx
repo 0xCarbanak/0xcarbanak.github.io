@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 const files = import.meta.glob<string>('./posts/*.md', {
   eager: true,
@@ -50,7 +51,20 @@ export default function Journal({ slug }: { slug?: string }) {
 
         {entry ? (
           <article className="journal-article" aria-label={entry.title}>
-            <Markdown skipHtml>{entry.body}</Markdown>
+            <Markdown
+              skipHtml
+              remarkPlugins={[remarkGfm]}
+              components={{
+                img: ({ node, ...props }) => <img {...props} loading="lazy" decoding="async" />,
+                table: ({ node, ...props }) => (
+                  <div className="journal-table-scroll" role="region" aria-label="Reference table" tabIndex={0}>
+                    <table {...props} />
+                  </div>
+                ),
+              }}
+            >
+              {entry.body}
+            </Markdown>
           </article>
         ) : slug ? (
           <p className="journal-status">This entry is unavailable.</p>

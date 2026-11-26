@@ -709,7 +709,17 @@ h1:focus { outline: none; }
 
 .journal-article > :first-child { margin-top: 0; }
 .journal-article > :last-child { margin-bottom: 0; }
-.journal-article :is(h2, h3, h4) { line-height: 1.3; }
+.journal-article :is(h2, h3, h4) { color: #d5ead7; line-height: 1.3; }
+.journal-article h2 {
+  margin: 2.65rem 0 .8rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--line);
+  font-size: clamp(1.22rem, 3.5vw, 1.55rem);
+  letter-spacing: -.025em;
+}
+.journal-article h3 { margin: 1.65rem 0 .45rem; font-size: 1.12rem; }
+.journal-article p { margin: .65rem 0 1rem; }
+.journal-article li + li { margin-top: .35rem; }
 .journal-article a { color: var(--accent); text-underline-offset: .23em; }
 .journal-article pre {
   overflow: auto;
@@ -722,8 +732,48 @@ h1:focus { outline: none; }
 
 .journal-article code { font: 500 .875rem / 1.55 var(--mono); }
 .journal-article :not(pre) > code { color: #c5e1c7; }
-.journal-article blockquote { margin-inline: 0; padding-left: 1rem; border-left: 2px solid #72937b; }
-.journal-article img { max-width: 100%; height: auto; }
+.journal-article blockquote {
+  margin: 1.35rem 0;
+  padding: .85rem 1rem;
+  border: 1px solid #344a3b;
+  border-left: 3px solid #8ab497;
+  background: #15231a;
+}
+.journal-article blockquote > :first-child { margin-top: 0; }
+.journal-article blockquote > :last-child { margin-bottom: 0; }
+.journal-article img { display: block; max-width: 100%; height: auto; }
+.journal-article p:has(> img:only-child) {
+  margin: 1.2rem 0 .45rem;
+  padding: clamp(.35rem, 1.5vw, .65rem);
+  border: 1px solid #3c5543;
+  background: #090f0b;
+}
+.journal-article p:has(> img:only-child) + p:has(> em:only-child) {
+  margin: .35rem 0 1.35rem;
+  color: #a0b7a6;
+  font-size: .9rem;
+}
+.journal-article p:has(> img:only-child) + p > em:only-child { font-style: normal; }
+.journal-table-scroll {
+  overflow-x: auto;
+  margin: 1rem 0 1.35rem;
+  border: 1px solid #3c5543;
+  background: #101b14;
+}
+.journal-table-scroll table {
+  width: 100%;
+  min-width: 26rem;
+  border-collapse: collapse;
+  font-size: .94rem;
+  line-height: 1.45;
+}
+.journal-table-scroll :is(th, td) {
+  padding: .58rem .7rem;
+  text-align: left;
+  vertical-align: top;
+}
+.journal-table-scroll th { background: #192920; color: #d5ead7; }
+.journal-table-scroll tbody tr { border-top: 1px solid var(--line); }
 
 @media (max-width: 40rem) {
   .homepage { padding-block: 1.55rem; }
