@@ -4,7 +4,7 @@ This walkthrough follows a DLL load from the executable’s import table to the 
 
 ## 1. Tools we need
 
-- Notepad++ portable as the example application.
+- [Notepad++ 8.6.8](https://notepad-plus-plus.org/) portable as the example application.
 - [Process Explorer](https://learn.microsoft.com/en-us/sysinternals/downloads/process-explorer) to list loaded modules and read the process environment.
 - [PE-bear](https://github.com/hasherezade/pe-bear) to inspect the executable’s imports and the DLLs’ exports.
 - [Process Monitor](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon), or Procmon, to see file operations and image loads as they happen.
