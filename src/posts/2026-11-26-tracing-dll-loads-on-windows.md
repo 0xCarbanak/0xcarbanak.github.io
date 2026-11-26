@@ -238,14 +238,7 @@ By default OMNISPEX checks only the target’s direct imports. Use `--depth` to 
 omnispex.exe C:\Temp\npp\notepad++.exe --local --depth 3 -v
 ```
 
-This walks the imports of each resolved DLL recursively. A DLL that isn’t a direct import of Notepad++ but is imported by one of its dependencies still loads into the process — and if the app directory is writable and searched first, it’s still hijackable:
-
-```
-  [!] PHANTOM    userenv.dll                    static   Not in app dir
-                 chain: notepad++.exe -> version.dll -> userenv.dll
-```
-
-The chain column shows the shortest import path from the target to the discovered DLL.
+This walks the imports of each resolved DLL recursively. A DLL that isn’t a direct import of Notepad++ but is imported by one of its dependencies still loads into the process — and if the app directory is writable and searched first, it’s still hijackable. For example, `version.dll` imports `userenv.dll`, so a depth-3 scan surfaces it with the chain `notepad++.exe → version.dll → userenv.dll`. That chain tells you the shortest import path from the target to the discovered DLL.
 
 ### Connecting the manual and automated evidence
 
