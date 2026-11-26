@@ -8,7 +8,7 @@ This walkthrough follows a DLL load from the executable’s import table to the 
 - [Process Explorer](https://learn.microsoft.com/en-us/sysinternals/downloads/process-explorer) to list loaded modules and read the process environment.
 - [PE-bear](https://github.com/hasherezade/pe-bear) to inspect the executable’s imports and the DLLs’ exports.
 - [Process Monitor](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon), or Procmon, to see file operations and image loads as they happen.
-- OMNISPEX to cross-check the import and load lists after the manual walkthrough.
+- [OMNISPEX](https://github.com/0xCarbanak/omnispex) to cross-check the import and load lists after the manual walkthrough.
 
 ## 2. DLL basics
 
@@ -162,6 +162,91 @@ Double-click the `Load Image` row in Procmon and select **Stack**. In this start
 
 ## 7. Cross-check with OMNISPEX
 
-OMNISPEX saves the work of matching the two lists by hand. In its output, `both` marks a name present in the import list and in the observed loads. My OMNISPEX run reported 19 static imports and 91 debugger-observed loads. That’s a separate recording from the Procmon baseline of 83 unique DLL names.
+Sections 3 through 6 walked through each step by hand: list the loaded modules, read the import table, trace the file operations, inspect the stack. [OMNISPEX](https://github.com/0xCarbanak/omnispex) automates that cross-referencing. It parses the PE imports, walks the DLL search order, optionally launches the target under the Debug API to capture runtime loads, and classifies every DLL by how exploitable its load path is.
 
-Use the overlap to orient yourself, then refer to the PE export table and the Procmon events for the evidence behind each observation. That’s how we can explain why `version.dll` made a useful example and which file actually loaded.
+### Run OMNISPEX against the same target
+
+Point it at the same Notepad++ portable directory we used throughout this post:
+
+```
+omnispex.exe C:\Temp\npp\notepad++.exe
+```
+
+The tool prints a header with PE metadata (architecture, signature, version info, import count) followed by its findings table:
+
+```
+  OMNISPEX
+  --------
+
+  Target:       C:\Temp\npp\notepad++.exe
+  App dir:      C:\Temp\npp
+  Architecture: x64 (GUI)
+  Signed:       YES (Notepad++)
+  Static imports:  19
+
+  Found 9 hijackable DLLs:
+
+  CLASS          DLL                            SOURCE   STEALTH  DETAILS
+  -----          ---                            ------   -------  -------
+  [!] PHANTOM    sensapi.dll                    static   HIGH     Not in app dir [3 exports]
+                 stealth: 3 exports (trivial proxy), direct import
+  [!] PHANTOM    version.dll                    static   HIGH     Not in app dir [17 exports]
+                 stealth: 17 exports, direct import
+  [!] PHANTOM    dwmapi.dll                     static   MED      Not in app dir [101 exports]
+                 stealth: 101 exports (complex proxy), direct import
+  [!] PHANTOM    crypt32.dll                    static   LOW      Not in app dir [307 exports]
+                 stealth: 307 exports (massive proxy), EDR-watched, direct import
+  [!] PHANTOM    wininet.dll                    static   LOW      Not in app dir [327 exports]
+                 stealth: 327 exports (massive proxy), EDR-watched, direct import
+```
+
+### Reading the output
+
+Each row is one DLL. The columns tell you what matters:
+
+- **CLASS** is the hijack category. `PHANTOM` means the DLL exists in System32 but the application directory is searched first — drop a proxy DLL there and Windows loads yours instead of the original. `MISSING` means the DLL isn’t found anywhere, so any DLL you place with that name gets loaded. `SIDELOAD` means the DLL is already in the app directory. `KNOWN_DLL` and `SAFE` entries are filtered out by default because they can’t be hijacked.
+- **SOURCE** tells you whether the import was found statically in the PE header (`static`) or observed at runtime through the debugger (`dynamic`). Static imports load at startup. Dynamic imports load later via `LoadLibrary`, which means the DLL only loads when the application reaches a specific code path.
+- **STEALTH** grades how practical the hijack is. `HIGH` means few exports to forward and no EDR attention — `sensapi.dll` with 3 exports is a trivial proxy to build. `LOW` means hundreds of exports or the DLL is on EDR watch lists (`crypt32.dll`, `wininet.dll`).
+
+The results are sorted so the best targets float to the top. In this case, `sensapi.dll` and `version.dll` are both rated HIGH stealth as PHANTOM DLLs with direct static imports.
+
+### Why version.dll showed up
+
+Look at the second row: `version.dll` is a PHANTOM DLL with 17 exports, rated HIGH stealth. That confirms what we traced manually in sections 4 through 6:
+
+1. PE-bear showed `version.dll` in the import table (section 4) — OMNISPEX reports it as `static`.
+2. Procmon showed the loader checking the app directory first, getting `NAME NOT FOUND`, then loading from System32 (section 6) — that’s exactly what `PHANTOM` means.
+3. The 17 exports we saw in PE-bear match the count in the OMNISPEX output.
+
+The tool reached the same conclusion we did by hand, but across all 19 imports at once.
+
+### Enumerating exports for proxy DLL building
+
+Add `--exports` to list every exported function from each hijackable DLL:
+
+```
+omnispex.exe C:\Temp\npp\notepad++.exe --local --exports
+```
+
+For `version.dll`, this shows all 17 exports with their ordinals, names, and forwarding targets — exactly what you need to write the `.def` file for a proxy DLL. The `--local` flag skips the debugger session and only checks the app directory, which is faster when you just need the export list.
+
+### Following import chains
+
+By default OMNISPEX checks only the target’s direct imports. Use `--depth` to follow transitive dependencies:
+
+```
+omnispex.exe C:\Temp\npp\notepad++.exe --local --depth 3 -v
+```
+
+This walks the imports of each resolved DLL recursively. A DLL that isn’t a direct import of Notepad++ but is imported by one of its dependencies still loads into the process — and if the app directory is writable and searched first, it’s still hijackable:
+
+```
+  [!] PHANTOM    userenv.dll                    static   Not in app dir
+                 chain: notepad++.exe -> version.dll -> userenv.dll
+```
+
+The chain column shows the shortest import path from the target to the discovered DLL.
+
+### Connecting the manual and automated evidence
+
+OMNISPEX tells you which DLLs are hijackable and ranks them. The manual walkthrough from sections 3 through 6 gives you the evidence trail — the PE export table, the Procmon file events, and the stack frames that prove how and why each load happened. Use OMNISPEX to find the targets, then refer back to Process Explorer, PE-bear, and Procmon for the forensic detail behind each one.
