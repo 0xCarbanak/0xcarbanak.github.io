@@ -1,4 +1,8 @@
-# Automating DLL hijack discovery with omnispex
+# Dude, Where's my DLL?
+
+*Automating DLL hijack discovery with omnispex*
+
+![Dude, Where's my DLL?](/images/dude-wheres-my-dll.png)
 
 Finding DLL search order hijacking opportunities by hand is tedious. The companion post on [tracing DLL loads on Windows](#blog/2026-11-26-tracing-dll-loads-on-windows) walked through the manual process: open the target in PE-bear, read the import table, set up Procmon filters, capture a startup trace, check each DLL path, read the export table, and repeat for every dependency. It works, but it does not scale. A single executable can import dozens of DLLs, each with its own chain of transitive dependencies.
 
